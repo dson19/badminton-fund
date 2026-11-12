@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quỹ Cầu Lông</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏸</text></svg>">
+<style>
+:root{
+  --bg:#f5f6f8;--card:#fff;--text:#1d2330;--muted:#6b7385;--line:#e3e6ec;
+  --accent:#0f8a5f;--accent-soft:#e3f4ed;--danger:#c93838;--danger-soft:#fbe9e9;
+  --warn:#a86a00;--warn-soft:#fff3dc;--chip:#eef0f4;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#12151b;--card:#1b2029;--text:#e7eaf0;--muted:#98a0b0;--line:#2b313d;
+  --accent:#3ccf95;--accent-soft:#163428;--danger:#ff7b7b;--danger-soft:#3a1d1f;
+  --warn:#f0b54a;--warn-soft:#3a2c12;--chip:#262c37;
+}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:760px;margin:0 auto;padding:16px 16px 80px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+h1{font-size:20px;margin:0}
+.sync{font-size:12px;color:var(--muted)}
+.tabs{display:flex;gap:4px;background:var(--chip);padding:4px;border-radius:10px;margin-bottom:14px}
+.tabs button{flex:1;border:0;background:transparent;padding:8px;border-radius:7px;font:inherit;color:var(--muted);cursor:pointer}
+.tabs button.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:0 1px 2px #0002}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.btn{border:1px solid var(--line);background:var(--card);color:var(--text);padding:10px 12px;border-radius:9px;font:inherit;cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+@media (prefers-color-scheme:dark){.btn.primary{color:#0b1a13}}
+.btn.small{padding:5px 9px;font-size:13px}
+.btn.danger{color:var(--danger)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.muted{color:var(--muted);font-size:13px}
+.amt{font-weight:700;font-variant-numeric:tabular-nums}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:99px;background:var(--chip);margin-right:6px}
+.tag.san{background:var(--accent-soft);color:var(--accent)}
+.tag.cau{background:var(--warn-soft);color:var(--warn)}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{border:1px solid var(--line);border-radius:99px;padding:4px 10px;font-size:13px;cursor:pointer;background:var(--card);color:var(--text);font-family:inherit}
+.chip.paid{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.chip.unpaid{background:var(--danger-soft);border-color:transparent;color:var(--danger)}
+.chip.payer{background:var(--chip);border-color:transparent;cursor:default}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.stat .v{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.pos{color:var(--accent)}.neg{color:var(--danger)}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+td,th{padding:8px 4px;border-bottom:1px solid var(--line);text-align:right;font-size:14px}
+td:first-child,th:first-child{text-align:left}
+th{color:var(--muted);font-weight:500;font-size:12px}
+input,select{font:inherit;color:var(--text);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+label.f{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.addm{display:flex;gap:8px;margin-bottom:12px}
+.addm input{flex:1}
+dialog{border:0;border-radius:14px;padding:0;width:min(520px,calc(100vw - 24px));background:var(--card);color:var(--text)}
+dialog::backdrop{background:#0008}
+.dlg{padding:16px;max-height:85vh;overflow:auto}
+.dlg h2{margin:0 0 6px;font-size:18px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.split{margin-top:12px;border:1px solid var(--line);border-radius:10px}
+.split-row{display:grid;grid-template-columns:24px 1fr 120px 24px;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line)}
+.split-row:last-child{border-bottom:0}
+.split-row input[type=checkbox]{width:18px;height:18px}
+.split-row input.share{padding:6px 8px;text-align:right}
+.split-row input.share.locked{border-color:var(--warn)}
+.lock{border:0;background:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0}
+.split-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px}
+.warn{color:var(--danger);font-size:13px;margin-top:6px}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
+.banner{background:var(--warn-soft);color:var(--warn);padding:8px 12px;border-radius:9px;font-size:13px;margin-bottom:12px}
+@media (max-width:480px){.actions{grid-template-columns:1fr 1fr}.actions .btn:last-child{grid-column:span 2}.split-row{grid-template-columns:22px 1fr 100px 20px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>🏸 Quỹ Cầu Lông</h1>
+    <span class="sync" id="sync">Đang tải…</span>
+  </header>
+  <div id="banner"></div>
+  <div class="tabs">
+    <button data-tab="chi" class="on">Khoản chi</button>
+    <button data-tab="no">Công nợ</button>
+    <button data-tab="tv">Thành viên</button>
+  </div>
+  <main id="view"></main>
+</div>
+
+<dialog id="dlg"><form class="dlg" id="form" method="dialog"></form></dialog>
+
+<script type="module">
+import { store } from './store.js';
+
+const $ = s => document.querySelector(s);
+const uid = () => Math.random().toString(36).slice(2, 10);
+const fmt = n => (Math.round(n) || 0).toLocaleString('vi-VN') + 'đ';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const TYPES = { san: 'Đặt sân', cau: 'Mua cầu', khac: 'Khác' };
+const today = () => new Date().toISOString().slice(0, 10);
+const fmtDate = d => d ? d.split('-').reverse().join('/') : '';
+// "120k" -> 120000, "1.5tr" -> 1500000, "120.000" -> 120000
+function parseMoney(s) {
+  s = String(s).trim().toLowerCase().replace(/\s/g, '');
+  if (!s) return 0;
+  let mul = 1;
+  if (/(k|n)$/.test(s)) { mul = 1e3; s = s.replace(/(k|n)$/, ''); }
+  else if (/(tr|m)$/.test(s)) { mul = 1e6; s = s.replace(/(tr|m)$/, ''); }
+  if (mul > 1) s = s.replace(',', '.'); else s = s.replace(/[.,]/g, '');
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : Math.round(n * mul);
+}
+
+let state = { members: [], expenses: [] };
+let tab = 'chi';
+const nameOf = id => state.members.find(m => m.id === id)?.name ?? '(đã xoá)';
+const activeMembers = () => state.members.filter(m => !m.removed);
+
+store.subscribe(s => { state = normalize(s); render(); },
+  status => { $('#sync').textContent = status; });
+if (store.mode === 'local') $('#banner').innerHTML = '<div class="banner">Chế độ thử: dữ liệu chỉ lưu trên máy này.</div>';
+
+function normalize(s) {
+  s = s || {};
+  return { members: s.members || [], expenses: s.expenses || [] };
+}
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  tab = b.dataset.tab;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
+  render();
+});
+
+// ---------- balances ----------
+function balances() {
+  const b = {};
+  for (const m of state.members) b[m.id] = { owe: 0, receive: 0, spent: 0, total: 0 };
+  const pairs = {}; // debtor->payer
+  for (const e of state.expenses) {
+    for (const [mid, amt] of Object.entries(e.shares || {})) {
+      b[mid] ??= { owe: 0, receive: 0, spent: 0, total: 0 };
+      b[mid].total += amt;
+      if (mid === e.payerId || !e.payerId) continue;
+      if (!e.paid?.[mid]) {
+        b[mid].owe += amt;
+        b[e.payerId] ??= { owe: 0, receive: 0, spent: 0, total: 0 };
+        b[e.payerId].receive += amt;
+        const k = mid + '>' + e.payerId;
+        pairs[k] = (pairs[k] || 0) + amt;
+      }
+    }
+    if (e.payerId) { b[e.payerId] ??= { owe: 0, receive: 0, spent: 0, total: 0 }; b[e.payerId].spent += e.amount; }
+  }
+  // net pairs A->B vs B->A
+  const net = [];
+  const seen = new Set();
+  for (const k of Object.keys(pairs)) {
+    const [a, p] = k.split('>');
+    const key = [a, p].sort().join('|');
+    if (seen.has(key)) continue; seen.add(key);
+    const d = (pairs[a + '>' + p] || 0) - (pairs[p + '>' + a] || 0);
+    if (d > 0) net.push({ from: a, to: p, amt: d });
+    else if (d < 0) net.push({ from: p, to: a, amt: -d });
+  }
+  net.sort((x, y) => y.amt - x.amt);
+  return { b, net };
+}
+
+// ---------- render ----------
+function render() {
+  const v = $('#view');
+  if (tab === 'chi') v.innerHTML = renderExpenses();
+  else if (tab === 'no') v.innerHTML = renderDebts();
+  else v.innerHTML = renderMembers();
+}
+
+function renderExpenses() {
+  const total = state.expenses.reduce((s, e) => s + e.amount, 0);
+  const { b } = balances();
+  const unpaid = Object.values(b).reduce((s, x) => s + x.owe, 0);
+  const month = today().slice(0, 7);
+  const monthTotal = state.expenses.filter(e => e.date?.startsWith(month)).reduce((s, e) => s + e.amount, 0);
+  let h = `<div class="actions">
+    <button class="btn primary" data-act="new" data-type="san">+ Đặt sân</button>
+    <button class="btn primary" data-act="new" data-type="cau">+ Mua cầu</button>
+    <button class="btn" data-act="new" data-type="khac">+ Khoản khác</button>
+  </div>
+  <div class="stats">
+    <div class="stat"><div class="muted">Tháng này</div><div class="v">${fmt(monthTotal)}</div></div>
+    <div class="stat"><div class="muted">Tổng chi</div><div class="v">${fmt(total)}</div></div>
+    <div class="stat"><div class="muted">Chưa thu</div><div class="v ${unpaid ? 'neg' : ''}">${fmt(unpaid)}</div></div>
+  </div>`;
+  if (!activeMembers().length) return h + `<div class="empty">Chưa có thành viên. Vào tab <b>Thành viên</b> để thêm trước nhé.</div>`;
+  if (!state.expenses.length) return h + `<div class="empty">Chưa có khoản chi nào.</div>`;
+  const list = [...state.expenses].sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.created || 0) - (a.created || 0));
+  for (const e of list) {
+    const chips = Object.entries(e.shares || {}).map(([mid, amt]) => {
+      if (mid === e.payerId) return `<span class="chip payer" title="Người trả">${esc(nameOf(mid))} · ${fmt(amt)} 💳</span>`;
+      const paid = !!e.paid?.[mid];
+      return `<button class="chip ${paid ? 'paid' : 'unpaid'}" data-act="toggle" data-id="${e.id}" data-mid="${mid}" title="Bấm để đổi trạng thái">${paid ? '✓' : '○'} ${esc(nameOf(mid))} · ${fmt(amt)}</button>`;
+    }).join('');
+    const unpaidCount = Object.keys(e.shares || {}).filter(mid => mid !== e.payerId && !e.paid?.[mid]).length;
+    h += `<div class="card">
+      <div class="row">
+        <div><span class="tag ${e.type}">${TYPES[e.type] || 'Khác'}</span><span class="muted">${fmtDate(e.date)}</span>
+          ${e.note ? `<div>${esc(e.note)}</div>` : ''}
+          <div class="muted">${e.payerId ? `${esc(nameOf(e.payerId))} trả trước` : 'Chưa ghi người trả'}${unpaidCount ? ` · còn ${unpaidCount} người chưa trả` : (e.payerId ? ' · đã thu đủ ✓' : '')}</div>
+        </div>
+        <div style="text-align:right"><div class="amt">${fmt(e.amount)}</div>
+          <button class="btn small" data-act="edit" data-id="${e.id}">Sửa</button></div>
+      </div>
+      <div class="chips">${chips}</div>
+    </div>`;
+  }
+  return h;
+}
+
+function renderDebts() {
+  const { b, net } = balances();
+  let h = `<div class="card"><b>Ai cần trả ai</b>`;
+  if (!net.length) h += `<div class="empty">Không ai nợ ai 🎉</div>`;
+  else h += `<table>${net.map(n => `<tr><td>${esc(nameOf(n.from))} → ${esc(nameOf(n.to))}</td><td class="amt neg">${fmt(n.amt)}</td>
+    <td style="width:90px"><button class="btn small" data-act="settle" data-from="${n.from}" data-to="${n.to}">Đã trả hết</button></td></tr>`).join('')}</table>`;
+  h += `</div><div class="card"><b>Theo thành viên</b><table>
+    <tr><th>Tên</th><th>Tổng phần chia</th><th>Đang nợ</th><th>Được nhận lại</th></tr>`;
+  const ids = Object.keys(b).filter(id => b[id].total || b[id].owe || b[id].receive || !state.members.find(m => m.id === id)?.removed);
+  ids.sort((x, y) => (b[y].owe - b[y].receive) - (b[x].owe - b[x].receive));
+  for (const id of ids) {
+    const x = b[id];
+    h += `<tr><td>${esc(nameOf(id))}</td><td>${fmt(x.total)}</td><td class="${x.owe ? 'neg' : ''}">${fmt(x.owe)}</td><td class="${x.receive ? 'pos' : ''}">${fmt(x.receive)}</td></tr>`;
+  }
+  return h + `</table><div class="muted" style="margin-top:8px">“Ai cần trả ai” đã bù trừ hai chiều. Bấm “Đã trả hết” để đánh dấu mọi khoản giữa 2 người là đã trả.</div></div>`;
+}
+
+function renderMembers() {
+  let h = `<form class="addm" id="addm"><input id="mname" placeholder="Tên thành viên mới" autocomplete="off"><button class="btn primary">Thêm</button></form>`;
+  const ms = activeMembers();
+  if (!ms.length) return h + `<div class="empty">Chưa có ai.</div>`;
+  h += `<div class="card">`;
+  for (const m of ms) h += `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)">
+    <span>${esc(m.name)}</span>
+    <span><button class="btn small" data-act="rename" data-id="${m.id}">Đổi tên</button>
+    <button class="btn small danger" data-act="rmmember" data-id="${m.id}">Xoá</button></span></div>`;
+  return h + `</div>`;
+}
+
+// ---------- events ----------
+$('#view').addEventListener('submit', e => {
+  if (e.target.id !== 'addm') return;
+  e.preventDefault();
+  const name = $('#mname').value.trim();
+  if (!name) return;
+  store.mutate(s => { s.members.push({ id: uid(), name }); });
+  $('#mname').value = '';
+});
+
+$('#view').addEventListener('click', e => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const { act, id, mid } = t.dataset;
+  if (act === 'new') openExpense(null, t.dataset.type);
+  else if (act === 'edit') openExpense(state.expenses.find(x => x.id === id));
+  else if (act === 'toggle') store.mutate(s => {
+    const ex = s.expenses.find(x => x.id === id); if (!ex) return;
+    ex.paid ||= {}; ex.paid[mid] = !ex.paid[mid];
+  });
+  else if (act === 'settle') {
+    const { from, to } = t.dataset;
+    if (!confirm(`Đánh dấu ${nameOf(from)} và ${nameOf(to)} đã thanh toán hết cho nhau?`)) return;
+    store.mutate(s => {
+      for (const ex of s.expenses) {
+        ex.paid ||= {};
+        if (ex.payerId === to && ex.shares?.[from] != null) ex.paid[from] = true;
+        if (ex.payerId === from && ex.shares?.[to] != null) ex.paid[to] = true;
+      }
+    });
+  }
+  else if (act === 'rename') {
+    const m = state.members.find(x => x.id === id);
+    const name = prompt('Tên mới', m?.name)?.trim();
+    if (name) store.mutate(s => { const x = s.members.find(x => x.id === id); if (x) x.name = name; });
+  }
+  else if (act === 'rmmember') {
+    if (!confirm(`Xoá ${nameOf(id)} khỏi đội? Các khoản cũ vẫn giữ nguyên.`)) return;
+    store.mutate(s => {
+      const used = s.expenses.some(x => x.payerId === id || x.shares?.[id] != null);
+      if (used) { const x = s.members.find(x => x.id === id); if (x) x.removed = true; }
+      else s.members = s.members.filter(x => x.id !== id);
+    });
+  }
+});
+
+// ---------- expense dialog ----------
+const dlg = $('#dlg'), form = $('#form');
+let draft = null;
+
+function openExpense(ex, type) {
+  const members = activeMembers();
+  if (!ex && !members.length) { alert('Thêm thành viên trước đã.'); return; }
+  draft = ex ? structuredClone(ex) : { id: null, type, date: today(), note: '', amount: 0, payerId: '', shares: {}, paid: {} };
+  draft.locked = {};
+  // members to show: active + anyone already in this expense
+  const ids = new Set(members.map(m => m.id));
+  Object.keys(draft.shares).forEach(id => ids.add(id));
+  if (draft.payerId) ids.add(draft.payerId);
+  draft.list = [...ids];
+  draft.checked = ex ? new Set(Object.keys(ex.shares)) : new Set(members.map(m => m.id));
+  if (ex) {
+    // keep existing custom splits: lock those that differ from an equal split
+    const eq = equalSplit(ex.amount, [...draft.checked]);
+    for (const id of draft.checked) if (eq[id] !== ex.shares[id]) draft.locked[id] = true;
+  } else recalc();
+
+  form.innerHTML = `<h2>${ex ? 'Sửa khoản chi' : 'Thêm: ' + TYPES[type]}</h2>
+    <div class="grid2">
+      <div><label class="f">Loại</label><select id="ftype">${Object.entries(TYPES).map(([k, v]) => `<option value="${k}" ${k === draft.type ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div><label class="f">Ngày</label><input type="date" id="fdate" value="${draft.date}"></div>
+    </div>
+    <label class="f">Số tiền (vd: 240k, 1.2tr, 240000)</label>
+    <input id="famount" inputmode="decimal" autocomplete="off" value="${draft.amount ? draft.amount.toLocaleString('vi-VN') : ''}">
+    <div class="muted" id="famountv"></div>
+    <div class="grid2">
+      <div><label class="f">Ai trả trước</label><select id="fpayer"><option value="">— Chưa ai —</option>
+        ${draft.list.map(id => `<option value="${id}" ${id === draft.payerId ? 'selected' : ''}>${esc(nameOf(id))}</option>`).join('')}</select></div>
+      <div><label class="f">Ghi chú</label><input id="fnote" value="${esc(draft.note)}" placeholder="Sân A, 2 tiếng…"></div>
+    </div>
+    <div class="split">
+      <div class="split-head"><span>Chia cho <a href="#" id="fall">tất cả</a> · <a href="#" id="fnone">bỏ hết</a></span><a href="#" id="freset">chia đều lại</a></div>
+      <div id="fsplit"></div>
+    </div>
+    <div id="fwarn" class="warn"></div>
+    <div class="muted" style="margin-top:6px">Sửa số tiền 1 người thì phần đó được khoá 🔒, phần còn lại tự chia đều cho những người khác.</div>
+    <div class="foot">
+      ${ex ? '<button type="button" class="btn danger" id="fdel" style="margin-right:auto">Xoá</button>' : ''}
+      <button type="button" class="btn" id="fcancel">Huỷ</button>
+      <button type="submit" class="btn primary">Lưu</button>
+    </div>`;
+  renderSplit();
+  $('#famountv').textContent = draft.amount ? fmt(draft.amount) : '';
+  $('#famount').oninput = ev => { draft.amount = parseMoney(ev.target.value); $('#famountv').textContent = draft.amount ? fmt(draft.amount) : ''; recalc(); renderSplit(); };
+  $('#fpayer').onchange = ev => draft.payerId = ev.target.value;
+  $('#fall').onclick = ev => { ev.preventDefault(); draft.list.forEach(id => draft.checked.add(id)); recalc(); renderSplit(); };
+  $('#fnone').onclick = ev => { ev.preventDefault(); draft.checked.clear(); draft.locked = {}; recalc(); renderSplit(); };
+  $('#freset').onclick = ev => { ev.preventDefault(); draft.locked = {}; recalc(); renderSplit(); };
+  $('#fcancel').onclick = () => dlg.close();
+  if (ex) $('#fdel').onclick = () => {
+    if (!confirm('Xoá khoản chi này?')) return;
+    store.mutate(s => { s.expenses = s.expenses.filter(x => x.id !== ex.id); });
+    dlg.close();
+  };
+  dlg.showModal();
+  if (!ex) $('#famount').focus();
+}
+
+function equalSplit(total, ids) {
+  const out = {};
+  if (!ids.length) return out;
+  // round to 1.000đ where possible, the first people absorb the remainder
+  const unit = total % 1000 === 0 && total / 1000 >= ids.length ? 1000 : 1;
+  const units = Math.round(total / unit);
+  const base = Math.floor(units / ids.length);
+  let rem = units - base * ids.length;
+  for (const id of ids) { out[id] = (base + (rem > 0 ? 1 : 0)) * unit; if (rem > 0) rem--; }
+  return out;
+}
+
+function recalc() {
+  const ids = draft.list.filter(id => draft.checked.has(id));
+  const lockedIds = ids.filter(id => draft.locked[id]);
+  const free = ids.filter(id => !draft.locked[id]);
+  const lockedSum = lockedIds.reduce((s, id) => s + (draft.shares[id] || 0), 0);
+  const eq = equalSplit(Math.max(0, draft.amount - lockedSum), free);
+  const shares = {};
+  for (const id of ids) shares[id] = draft.locked[id] ? (draft.shares[id] || 0) : eq[id];
+  draft.shares = shares;
+}
+
+function renderSplit() {
+  $('#fsplit').innerHTML = draft.list.map(id => {
+    const on = draft.checked.has(id);
+    return `<div class="split-row">
+      <input type="checkbox" data-id="${id}" ${on ? 'checked' : ''}>
+      <span>${esc(nameOf(id))}</span>
+      <input class="share ${draft.locked[id] ? 'locked' : ''}" data-id="${id}" inputmode="decimal" value="${on ? (draft.shares[id] || 0).toLocaleString('vi-VN') : ''}" ${on ? '' : 'disabled'}>
+      <button type="button" class="lock" data-id="${id}" title="${draft.locked[id] ? 'Bỏ khoá' : ''}">${draft.locked[id] ? '🔒' : ''}</button>
+    </div>`;
+  }).join('');
+  $('#fsplit').querySelectorAll('input[type=checkbox]').forEach(cb => cb.onchange = () => {
+    const id = cb.dataset.id;
+    if (cb.checked) draft.checked.add(id); else { draft.checked.delete(id); delete draft.locked[id]; }
+    recalc(); renderSplit();
+  });
+  $('#fsplit').querySelectorAll('input.share').forEach(inp => {
+    inp.onchange = () => {
+      const id = inp.dataset.id;
+      draft.shares[id] = parseMoney(inp.value);
+      draft.locked[id] = true;
+      recalc(); renderSplit();
+    };
+  });
+  $('#fsplit').querySelectorAll('.lock').forEach(b => b.onclick = () => {
+    delete draft.locked[b.dataset.id]; recalc(); renderSplit();
+  });
+  checkSum();
+}
+
+function checkSum() {
+  const sum = Object.values(draft.shares).reduce((s, x) => s + x, 0);
+  const w = $('#fwarn');
+  if (!draft.amount) w.textContent = '';
+  else if (!draft.checked.size) w.textContent = 'Chưa chọn ai để chia.';
+  else if (sum !== draft.amount) w.textContent = `Tổng phần chia ${fmt(sum)} ≠ số tiền ${fmt(draft.amount)} (lệch ${fmt(sum - draft.amount)}). Bấm "chia đều lại" hoặc sửa lại.`;
+  else w.textContent = '';
+}
+
+form.addEventListener('submit', ev => {
+  ev.preventDefault();
+  draft.type = $('#ftype').value;
+  draft.date = $('#fdate').value || today();
+  draft.note = $('#fnote').value.trim();
+  draft.payerId = $('#fpayer').value;
+  const sum = Object.values(draft.shares).reduce((s, x) => s + x, 0);
+  if (!draft.amount) return alert('Nhập số tiền.');
+  if (!draft.checked.size) return alert('Chọn ít nhất 1 người để chia.');
+  if (sum !== draft.amount) return alert('Tổng phần chia chưa khớp số tiền.');
+  const paid = {};
+  for (const id of Object.keys(draft.shares)) if (draft.paid?.[id]) paid[id] = true;
+  const rec = { id: draft.id || uid(), type: draft.type, date: draft.date, note: draft.note,
+    amount: draft.amount, payerId: draft.payerId, shares: draft.shares, paid, created: draft.created || Date.now() };
+  store.mutate(s => {
+    const i = s.expenses.findIndex(x => x.id === rec.id);
+    if (i >= 0) s.expenses[i] = rec; else s.expenses.push(rec);
+  });
+  dlg.close();
+});
+</script>
+</body>
+</html>
