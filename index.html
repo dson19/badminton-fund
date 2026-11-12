@@ -72,6 +72,11 @@ dialog::backdrop{background:#0008}
 .warn{color:var(--danger);font-size:13px;margin-top:6px}
 .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}
 .banner{background:var(--warn-soft);color:var(--warn);padding:8px 12px;border-radius:9px;font-size:13px;margin-bottom:12px}
+.qrbox{text-align:center}
+.qrbox .qr{background:#fff;display:inline-block;padding:12px;border-radius:12px;margin:10px 0}
+.qrbox .qr svg{display:block;width:240px;height:240px}
+.qrbox .big{font-size:22px;font-weight:700;color:var(--accent)}
+.bankline{font-size:12px;color:var(--muted)}
 @media (max-width:480px){.actions{grid-template-columns:1fr 1fr}.actions .btn:last-child{grid-column:span 2}.split-row{grid-template-columns:22px 1fr 100px 20px}}
 </style>
 </head>
@@ -91,6 +96,8 @@ dialog::backdrop{background:#0008}
 </div>
 
 <dialog id="dlg"><form class="dlg" id="form" method="dialog"></form></dialog>
+<dialog id="dlg2"><form class="dlg" id="form2" method="dialog"></form></dialog>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
 <script type="module">
 import { store } from './store.js';
@@ -125,7 +132,7 @@ if (store.mode === 'local') $('#banner').innerHTML = '<div class="banner">Chế 
 
 function normalize(s) {
   s = s || {};
-  return { members: s.members || [], expenses: s.expenses || [] };
+  return { members: s.members || [], expenses: s.expenses || [], banks: s.banks || {} };
 }
 
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
@@ -223,7 +230,7 @@ function renderDebts() {
   let h = `<div class="card"><b>Ai cần trả ai</b>`;
   if (!net.length) h += `<div class="empty">Không ai nợ ai 🎉</div>`;
   else h += `<table>${net.map(n => `<tr><td>${esc(nameOf(n.from))} → ${esc(nameOf(n.to))}</td><td class="amt neg">${fmt(n.amt)}</td>
-    <td style="width:90px"><button class="btn small" data-act="settle" data-from="${n.from}" data-to="${n.to}">Đã trả hết</button></td></tr>`).join('')}</table>`;
+    <td style="width:150px;white-space:nowrap">${state.banks[n.to]?.acc ? `<button class="btn small" data-act="qr" data-from="${n.from}" data-to="${n.to}" data-amt="${n.amt}">QR</button> ` : ''}<button class="btn small" data-act="settle" data-from="${n.from}" data-to="${n.to}">Đã trả hết</button></td></tr>`).join('')}</table>`;
   h += `</div><div class="card"><b>Theo thành viên</b><table>
     <tr><th>Tên</th><th>Tổng phần chia</th><th>Đang nợ</th><th>Được nhận lại</th></tr>`;
   const ids = Object.keys(b).filter(id => b[id].total || b[id].owe || b[id].receive || !state.members.find(m => m.id === id)?.removed);
@@ -241,8 +248,9 @@ function renderMembers() {
   if (!ms.length) return h + `<div class="empty">Chưa có ai.</div>`;
   h += `<div class="card">`;
   for (const m of ms) h += `<div class="row" style="padding:6px 0;border-bottom:1px solid var(--line)">
-    <span>${esc(m.name)}</span>
-    <span><button class="btn small" data-act="rename" data-id="${m.id}">Đổi tên</button>
+    <span>${esc(m.name)}${state.banks[m.id]?.acc ? `<div class="bankline">🏦 ${esc(bankName(state.banks[m.id].bin))} · ${esc(state.banks[m.id].acc)}</div>` : ''}</span>
+    <span style="white-space:nowrap"><button class="btn small" data-act="bank" data-id="${m.id}">🏦 TK</button>
+    <button class="btn small" data-act="rename" data-id="${m.id}">Đổi tên</button>
     <button class="btn small danger" data-act="rmmember" data-id="${m.id}">Xoá</button></span></div>`;
   return h + `</div>`;
 }
@@ -262,6 +270,8 @@ $('#view').addEventListener('click', e => {
   if (!t) return;
   const { act, id, mid } = t.dataset;
   if (act === 'new') openExpense(null, t.dataset.type);
+  else if (act === 'bank') openBank(id);
+  else if (act === 'qr') openQR(t.dataset.from, t.dataset.to, +t.dataset.amt);
   else if (act === 'edit') openExpense(state.expenses.find(x => x.id === id));
   else if (act === 'toggle') store.mutate(s => {
     const ex = s.expenses.find(x => x.id === id); if (!ex) return;
@@ -292,6 +302,102 @@ $('#view').addEventListener('click', e => {
     });
   }
 });
+
+// ---------- bank account + VietQR ----------
+const BANKS = [
+  ['970422', 'MB Bank'], ['970436', 'Vietcombank'], ['970407', 'Techcombank'], ['970418', 'BIDV'],
+  ['970415', 'VietinBank'], ['970405', 'Agribank'], ['970416', 'ACB'], ['970432', 'VPBank'],
+  ['970423', 'TPBank'], ['970403', 'Sacombank'], ['970441', 'VIB'], ['970443', 'SHB'],
+  ['970437', 'HDBank'], ['970426', 'MSB'], ['970448', 'OCB'], ['970431', 'Eximbank'],
+  ['970440', 'SeABank'], ['970449', 'LPBank'], ['546034', 'Cake'], ['963388', 'Timo'],
+];
+const bankName = bin => BANKS.find(b => b[0] === bin)?.[1] || bin;
+const ascii = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').replace(/[^A-Za-z0-9 ]/g, '');
+const tlv = (id, v) => id + String(v.length).padStart(2, '0') + v;
+function crc16(s) {
+  let c = 0xFFFF;
+  for (let i = 0; i < s.length; i++) {
+    c ^= s.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) c = (c & 0x8000 ? (c << 1) ^ 0x1021 : c << 1) & 0xFFFF;
+  }
+  return c.toString(16).toUpperCase().padStart(4, '0');
+}
+// VietQR (NAPAS 247) payload, same format the banking apps generate
+function vietqr(bin, acc, amount, info) {
+  let p = tlv('00', '01') + tlv('01', amount ? '12' : '11')
+    + tlv('38', tlv('00', 'A000000727') + tlv('01', tlv('00', bin) + tlv('01', acc)) + tlv('02', 'QRIBFTTA'))
+    + tlv('53', '704') + (amount ? tlv('54', String(Math.round(amount))) : '') + tlv('58', 'VN')
+    + (info ? tlv('62', tlv('08', info)) : '') + '6304';
+  return p + crc16(p);
+}
+window.vietqr = vietqr; // for testing
+
+const dlg2 = $('#dlg2'), form2 = $('#form2');
+form2.addEventListener('submit', e => e.preventDefault());
+
+function openBank(id) {
+  const b = state.banks[id] || { bin: '970422', acc: '', holder: '' };
+  form2.innerHTML = `<h2>Tài khoản nhận tiền: ${esc(nameOf(id))}</h2>
+    <div class="muted">Dùng để tạo mã QR khi người khác trả tiền cho ${esc(nameOf(id))}.</div>
+    <label class="f">Ngân hàng</label>
+    <select id="bbin">${BANKS.map(([bin, n]) => `<option value="${bin}" ${bin === b.bin ? 'selected' : ''}>${n}</option>`).join('')}</select>
+    <label class="f">Số tài khoản</label><input id="bacc" inputmode="numeric" value="${esc(b.acc)}" autocomplete="off">
+    <label class="f">Tên chủ tài khoản (không bắt buộc)</label><input id="bholder" value="${esc(b.holder)}" placeholder="NGUYEN VAN A">
+    <div class="foot">
+      ${state.banks[id] ? '<button type="button" class="btn danger" id="bdel" style="margin-right:auto">Xoá TK</button>' : ''}
+      <button type="button" class="btn" id="bcancel">Huỷ</button>
+      <button type="button" class="btn primary" id="bsave">Lưu</button>
+    </div>`;
+  $('#bcancel').onclick = () => dlg2.close();
+  $('#bsave').onclick = () => {
+    const acc = $('#bacc').value.replace(/\s/g, '');
+    if (!/^[0-9A-Za-z]{4,19}$/.test(acc)) return alert('Số tài khoản không hợp lệ.');
+    const rec = { bin: $('#bbin').value, acc, holder: ascii($('#bholder').value).toUpperCase().trim() };
+    store.mutate(s => { s.banks ||= {}; s.banks[id] = rec; });
+    dlg2.close();
+  };
+  if (state.banks[id]) $('#bdel').onclick = () => {
+    if (!confirm('Xoá tài khoản ngân hàng này?')) return;
+    store.mutate(s => { if (s.banks) delete s.banks[id]; });
+    dlg2.close();
+  };
+  dlg2.showModal();
+}
+
+function openQR(from, to, amt) {
+  const b = state.banks[to];
+  if (!b) return;
+  const info = ascii(`${nameOf(from)} tra ${nameOf(to)} cau long`).slice(0, 25).trim();
+  const payload = vietqr(b.bin, b.acc, amt, info);
+  let svg = '';
+  try { const q = qrcode(0, 'M'); q.addData(payload); q.make(); svg = q.createSvgTag({ cellSize: 6, margin: 0 }); }
+  catch { svg = '<div class="warn">Không tạo được mã QR.</div>'; }
+  form2.innerHTML = `<div class="qrbox">
+    <h2>${esc(nameOf(from))} → ${esc(nameOf(to))}</h2>
+    <div class="big">${fmt(amt)}</div>
+    <div class="qr">${svg}</div>
+    <div><b>${esc(bankName(b.bin))}</b> · <span id="qacc">${esc(b.acc)}</span> <button type="button" class="btn small" id="qcopy">Copy STK</button></div>
+    ${b.holder ? `<div class="muted">${esc(b.holder)}</div>` : ''}
+    <div class="muted">Nội dung: ${esc(info)}</div>
+    <div class="muted" style="margin-top:8px">Mở app ngân hàng, quét mã. Số tiền và nội dung đã điền sẵn.</div>
+    <div class="foot" style="justify-content:center">
+      <button type="button" class="btn" id="qclose">Đóng</button>
+      <button type="button" class="btn primary" id="qdone">Đã chuyển xong</button>
+    </div></div>`;
+  $('#qclose').onclick = () => dlg2.close();
+  $('#qcopy').onclick = () => navigator.clipboard?.writeText(b.acc).then(() => $('#qcopy').textContent = 'Đã copy ✓');
+  $('#qdone').onclick = () => {
+    store.mutate(s => {
+      for (const ex of s.expenses) {
+        ex.paid ||= {};
+        if (ex.payerId === to && ex.shares?.[from] != null) ex.paid[from] = true;
+        if (ex.payerId === from && ex.shares?.[to] != null) ex.paid[to] = true;
+      }
+    });
+    dlg2.close();
+  };
+  dlg2.showModal();
+}
 
 // ---------- expense dialog ----------
 const dlg = $('#dlg'), form = $('#form');
